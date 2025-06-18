@@ -4,8 +4,19 @@ import datetime
 import requests
 from flask import jsonify
 import pywhatkit as kit
+import sqlite3
+conn = sqlite3.connect("clientes.db")
+tabla_completa = conn.execute("SELECT * from clientes").fetchall()
+cursor = conn.cursor()
+
+print(tabla_completa)
+
+##csv.writer###  escribir los headers(nombre, telefono, fecha, frecuencia), y escribir el .csv
+##Crear clientes.csv de tabla_completa
 
 
+#como cargar de la base de datos a un dataframe
+#df_top20.tocsv
 API_URL = "http://127.0.0.1:5000"
 root = tk.Tk()
 # --- Autenticación ---
@@ -261,7 +272,8 @@ def enviar_whatsapp():
         if ahora.minute >= 58:
             hora += 1
 
-        kit.sendwhatmsg(telefono, mensaje, hora, minuto)
+        #kit.sendwhatmsg(telefono, mensaje, hora, minuto)
+        kit.sendwhatmsg_instantly(telefono, mensaje, wait_time=15, tab_close=True, close_time=3)
         messagebox.showinfo("Éxito", f"Mensaje programado a {telefono}")
     except Exception as e:
         messagebox.showerror("Error", f"No se pudo enviar el mensaje: {e}")
@@ -293,6 +305,20 @@ def actualizar_ultima_compra():
     except Exception as e:
         messagebox.showerror("Error", f"Error al actualizar: {e}")
 
+import pandas as pd  # Asegurate de tener pandas importado
+
+def exportar_clientes_a_csv():
+    try:
+        response = requests.get(f"{API_URL}/clientes")
+        if response.status_code == 200:
+            datos = response.json()
+            df = pd.DataFrame(datos)
+            df.to_csv("clientes_exportado.csv", index=False)
+            messagebox.showinfo("Éxito", "Clientes exportados a CSV")
+        else:
+            messagebox.showerror("Error", "No se pudo obtener la lista de clientes")
+    except Exception as e:
+        messagebox.showerror("Error", f"Error exportando CSV: {e}")
 
 # --- UI ---
 root.title("Mini CRM Clientes")
@@ -336,6 +362,8 @@ btn_whatsapp.grid(row=1, column=1, padx=5, pady=5)
 btn_actualizar_fecha = tk.Button(frame_botones, text="Actualizar ultima compra", bg="#FF9800", fg="white", width=20, command=actualizar_ultima_compra)
 btn_actualizar_fecha.grid(row=2, column=0, columnspan=2, pady=5)
 
+btn_exportar_csv = tk.Button(frame_botones, text="Exportar a CSV", bg="#9C27B0", fg="white", width=20, command=exportar_clientes_a_csv)
+btn_exportar_csv.grid(row=3, column=0, columnspan=2, pady=5)
 
 frame.columnconfigure(1, weight=1)
 
